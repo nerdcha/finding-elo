@@ -1,4 +1,6 @@
 
+set.seed(31337)
+
 library(randomForest)
 
 blackElo <- read.table('Features/BlackElo.txt', header=FALSE)$V1
@@ -63,10 +65,10 @@ yTrainBig <- data.frame(WhiteElo = whiteElo, BlackElo = blackElo,
 yTrainBig$AverageBC <- (yTrainBig$AverageElo/2500)**2
 
 
-trainSize <- 8000
+trainSize <- 15000
 testSize <- 5000
 
-nFolds <- 5
+nFolds <- 10
 predictionsWhite <- matrix(NA, nrow=25000, ncol=nFolds)
 predictionsBlack <- matrix(NA, nrow=25000, ncol=nFolds)
 MAEs <- c()
