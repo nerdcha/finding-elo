@@ -18,6 +18,9 @@ cut -d " " -f 1-45 Features/SortedGmOpenings.txt > Features/TrimmedGmOpenings.tx
 
 
 # That unfolding doesn't seem to work on data.pgn.
-# I resorted to using TextWrangler to Remove Line Breaks.
+# I resorted to using TextWrangler to Remove Line Breaks,
+# and saved it as unfoldedData.txt
 
+# Extract results from each game
+cat unfoldedData.txt | rev | cut -d ' ' -f1 | rev > Features/Results.txt
 
