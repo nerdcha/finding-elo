@@ -24,12 +24,7 @@ replaceWithMedian <- function(x){
 for(stockColumn in names(stockfish)){
   stockfish[[stockColumn]] <- replaceWithMedian(stockfish[[stockColumn]])
 }
-stockfish$gameDrift <- replaceWithMedian(stockfish$gameDrift)
-stockfish$gameOscillation <- replaceWithMedian(stockfish$gameOscillation)
-stockfish$whiteGoodShare <- replaceWithMedian(stockfish$whiteGoodShare)
-stockfish$blackGoodShare <- replaceWithMedian(stockfish$blackGoodShare)
-stockfish$whiteBlunders <- replaceWithMedian(stockfish$whiteBlunders)
-stockfish$blackBlunders <- replaceWithMedian(stockfish$blackBlunders)
+
 
 
 groupMoves <- function(x, nLevels){
@@ -68,10 +63,7 @@ yTrainBig$AverageBC <- (yTrainBig$AverageElo/2500)**2
 
 featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
                         'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
-                        'SamplePoint1', 'SamplePoint2', 'SamplePoint3', 'SamplePoint4', 'SamplePoint5',
-                        'SamplePoint6', 'SamplePoint7', 'SamplePoint8', 'SamplePoint9', 'SamplePoint10',
-                        'SamplePoint11', 'SamplePoint12', 'SamplePoint13', 'SamplePoint14', 'SamplePoint15',
-                        'SamplePoint16', 'SamplePoint17', 'SamplePoint18', 'SamplePoint19', 'SamplePoint20',
+                        'Move1', 'Move2', 'Move3', 'Move4', 'Move5',
                         'OutOfBook', 'Result')
 xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
                                                 paste(featureColumnNames, collapse="+"))), xTestBig)

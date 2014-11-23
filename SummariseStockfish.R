@@ -9,6 +9,13 @@ for(i in 1:nSamplePoints){
   names(emptySamplePoints)[i] <- paste0('SamplePoint',i)
 }
 
+movesToKeep <- c(8,15,22,29,36)
+nMovesToKeep <- length(movesToKeep)
+emptyMovesToKeep <- data.frame(matrix(rep(NA, nMovesToKeep), nrow=1))
+for(i in 1:nMovesToKeep){
+  names(emptyMovesToKeep)[i] <- paste0('Move',i)
+}
+
 getSummaryStats <- function(stockline){
   
   game <- as.numeric(strsplit(stockline$MoveScores, split = ' ')[[1]])
@@ -18,7 +25,7 @@ getSummaryStats <- function(stockline){
     return(cbind(data.frame(gameLength = gameLength, gameDrift = 0, gameOscillation = 0,
                       whiteGoodShare = NA, blackGoodShare = NA,
                       whiteBlunders = NA, blackBlunders = NA),
-                 emptySamplePoints))
+                 emptySamplePoints, emptyMovesToKeep))
   }
   diffGame <- diff(game)
   blackDiffs <- seq(from=1, by=2, to=length(diffGame))
@@ -38,10 +45,14 @@ getSummaryStats <- function(stockline){
                    blackMoves[floor(seq(from=1, to=length(blackMoves), length.out = nSamplePoints/2))])
   theseSamplePoints <- emptySamplePoints
   theseSamplePoints[1,] <- game[sampleMoves]
+  
+  theseMovesToKeep <- emptyMovesToKeep
+  theseMovesToKeep[1,] <- game[movesToKeep]
+  
   return(cbind(data.frame(gameLength = gameLength, gameDrift = gameDrift, gameOscillation = gameOscillation,
                     whiteGoodShare = whiteGoodShare, blackGoodShare = blackGoodShare,
                     whiteBlunders = whiteBlunders, blackBlunders = blackBlunders),
-               theseSamplePoints))
+               theseSamplePoints, theseMovesToKeep))
 }
 
 mySummary <- stocktxt %>% rowwise() %>% do(getSummaryStats(.)) %>% ungroup()
