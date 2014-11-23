@@ -11,6 +11,7 @@ whiteMoveOne <- read.table('Features/WhiteMoveOne.txt', header=FALSE)$V1
 whiteMoveTwoRaw <- read.table('Features/WhiteMoveTwo.txt', header=FALSE)$V1
 stockfish <- read.csv('Features/StockSummary.csv')
 moveTwo <- read.table('Features/MoveTwo.txt', header=FALSE)$V1
+outOfBook <- read.table('Features/OutOfBookMove.txt', header=FALSE)$V1
 
 replaceWithMedian <- function(x){
   x[is.na(x)] <- median(na.omit(x))
@@ -46,18 +47,10 @@ openingMoves <- paste(whiteMoveOneGrouped, blackMoveOneGrouped,
 openingMovesGrouped <- groupMoves(openingMoves, 50)
 
 xTrainBig <- cbind(
-  data.frame(WhiteMoveOne = whiteMoveOneGrouped[1:25000],
-             WhiteMoveTwo = whiteMoveTwoGrouped[1:25000],
-             BlackMoveOne = blackMoveOneGrouped[1:25000],
-             BlackMoveTwo = blackMoveTwoGrouped[1:25000],
-             OpeningMoves = openingMovesGrouped[1:25000]),
+  data.frame(OutOfBook = outOfBook[1:25000]),
   stockfish[1:25000,])
 xTestBig <- cbind(
-  data.frame(WhiteMoveOne = whiteMoveOneGrouped[25001:50000],
-             WhiteMoveTwo = whiteMoveTwoGrouped[25001:50000],
-             BlackMoveOne = blackMoveOneGrouped[25001:50000],
-             BlackMoveTwo = blackMoveTwoGrouped[25001:50000],
-             OpeningMoves = openingMovesGrouped[25001:50000]),
+  data.frame(OutOfBook = outOfBook[25001:50000]),
   stockfish[25001:50000,])
 yTrainBig <- data.frame(WhiteElo = whiteElo, BlackElo = blackElo,
                         AverageElo = 0.5*blackElo + 0.5*whiteElo,
@@ -65,7 +58,7 @@ yTrainBig <- data.frame(WhiteElo = whiteElo, BlackElo = blackElo,
 yTrainBig$AverageBC <- (yTrainBig$AverageElo/2500)**2
 
 
-trainSize <- 15000
+trainSize <- 10000
 testSize <- 5000
 
 nFolds <- 10
@@ -82,8 +75,9 @@ for(foldI in 1:nFolds){
                    yTrainBig[trainRows,])
   testDf <- cbind(xTrainBig[testRows,], yTrainBig[testRows,])
   
-  featureColumnNames <- c('OpeningMoves', 'gameLength', 'gameDrift', 'gameOscillation',
-                          'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders')
+  featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
+                          'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
+                          'OutOfBook')
   rf1 <- randomForest(trainDf[featureColumnNames], trainDf[['AverageBC']])
   testDf$PredictedAvg <- 2500 * sqrt(predict(rf1, newdata=testDf))
   bigPredictedAvg <- 2500 * sqrt(predict(rf1, newdata=xTestBig))

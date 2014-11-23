@@ -7,6 +7,17 @@ grep '^1\.' data.pgn | cut -f5 -d' ' > Features/WhiteMoveTwo.txt
 grep '^1\.' data.pgn | cut -f6 -d' ' > Features/BlackMoveTwo.txt
 
 
-# ECO in PGN format accessed from http://www.interajedrez.com/v2005/ecoe.zip
-# via http://www.chessvisor.com/v-aperturas.html
+
+
+# GM game database from http://www.hoflink.com/~npollock/chess.html
+# First need to fix up OS X's sed peculiarities
+export LC_CTYPE=C
+export LANG=C
+cat gm2006.pgn | sed -n 'H;${;x;s/\n //;p;}' | awk 'NR % 4 == 0' | sort > Features/SortedGmOpenings.txt
+cut -d " " -f 1-45 Features/SortedGmOpenings.txt > Features/TrimmedGmOpenings.txt
+
+
+# That unfolding doesn't seem to work on data.pgn.
+# I resorted to using TextWrangler to Remove Line Breaks.
+
 
