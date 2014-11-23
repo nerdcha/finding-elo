@@ -1,7 +1,10 @@
 
 set.seed(31337)
 
-library(randomForest)
+# library(devtools)
+# install_github('tqchen/xgboost/R-package')
+# Using version 0.3, accessed 23 Nov 2014
+library(xgboost)
 
 blackElo <- read.table('Features/BlackElo.txt', header=FALSE)$V1
 blackMoveOne <- read.table('Features/BlackMoveOne.txt', header=FALSE)$V1
@@ -63,6 +66,14 @@ yTrainBig <- data.frame(WhiteElo = whiteElo, BlackElo = blackElo,
                         WhiteMinusBlack = whiteElo - blackElo)
 yTrainBig$AverageBC <- (yTrainBig$AverageElo/2500)**2
 
+featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
+                        'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
+                        'SamplePoint1', 'SamplePoint2', 'SamplePoint3', 'SamplePoint4', 'SamplePoint5',
+                        'SamplePoint6', 'SamplePoint7', 'SamplePoint8', 'SamplePoint9', 'SamplePoint10',
+                        'OutOfBook', 'Result')
+xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
+                                                paste(featureColumnNames, collapse="+"))), xTestBig)
+
 
 trainSize <- 5000
 testSize <- 5000
@@ -81,18 +92,25 @@ for(foldI in 1:nFolds){
                    yTrainBig[trainRows,])
   testDf <- cbind(xTrainBig[testRows,], yTrainBig[testRows,])
   
-  featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
-                          'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
-                          'SamplePoint1', 'SamplePoint2', 'SamplePoint3', 'SamplePoint4', 'SamplePoint5',
-                          'SamplePoint6', 'SamplePoint7', 'SamplePoint8', 'SamplePoint9', 'SamplePoint10',
-                          'OutOfBook', 'Result')
-  rf1 <- randomForest(trainDf[featureColumnNames], trainDf[['AverageBC']])
-  testDf$PredictedAvg <- 2500 * sqrt(predict(rf1, newdata=testDf))
-  bigPredictedAvg <- 2500 * sqrt(predict(rf1, newdata=xTestBig))
+  trainMatrix <- model.matrix(as.formula(paste('~ 0 +', paste(featureColumnNames, collapse="+"))), trainDf)
+  testMatrix <- model.matrix(as.formula(paste('~ 0 +', paste(featureColumnNames, collapse="+"))), testDf)
   
-  rf2 <- randomForest(trainDf[featureColumnNames], trainDf[['WhiteMinusBlack']])
-  testDf$PredictedDiff <- predict(rf2, newdata=testDf)
-  bigPredictedDiff <- predict(rf2, newdata=xTestBig)
+  dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['AverageBC']])
+  dTest <- xgb.DMatrix(testMatrix, label= testDf[['AverageBC']])
+  # nrounds chosen by running xgb.cv(list(objective='reg:linear'), dTrain, nfold=5, nrounds= xxx)
+  # xgb.cv() doesn't seem to support dynamic access to its findings in the current version,
+  # it just prints them...
+  gb1 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
+                 nrounds = 200, eta=0.05, max.depth=2)
+  testDf$PredictedAvg <- 2500 * sqrt(predict(gb1, newdata=dTest))
+  bigPredictedAvg <- 2500 * sqrt(predict(gb1, newdata=xTestBigMatrix))
+  
+  dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['WhiteMinusBlack']])
+  dTest <- xgb.DMatrix(testMatrix, label= testDf[['WhiteMinusBlack']])
+  gb2 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
+                 nrounds = 200, eta=0.05, max.depth=2)
+  testDf$PredictedDiff <- predict(gb2, newdata=dTest)
+  bigPredictedDiff <- predict(gb2, newdata=xTestBigMatrix)
   
   testDf$PredictedWhite <- testDf$PredictedAvg + 0.5*testDf$PredictedDiff
   testDf$PredictedBlack <- testDf$PredictedAvg - 0.5*testDf$PredictedDiff
