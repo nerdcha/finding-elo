@@ -99,14 +99,14 @@ for(foldI in 1:nFolds){
   # xgb.cv() doesn't seem to support dynamic access to its findings in the current version,
   # it just prints them...
   gb1 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
-                 nrounds = 300, eta=0.07, max.depth=3)
+                 nrounds = 400, eta=0.1, max.depth=2, subsample=0.5)
   testDf$PredictedAvg <- 2500 * sqrt(predict(gb1, newdata=dTest))
   bigPredictedAvg <- 2500 * sqrt(predict(gb1, newdata=xTestBigMatrix))
   
   dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['WhiteMinusBlack']])
   dTest <- xgb.DMatrix(testMatrix, label= testDf[['WhiteMinusBlack']])
   gb2 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
-                 nrounds = 300, eta=0.07, max.depth=3)
+                 nrounds = 400, eta=0.1, max.depth=2, subsample=0.5)
   testDf$PredictedDiff <- predict(gb2, newdata=dTest)
   bigPredictedDiff <- predict(gb2, newdata=xTestBigMatrix)
   
