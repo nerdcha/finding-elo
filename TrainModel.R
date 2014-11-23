@@ -18,6 +18,9 @@ replaceWithMedian <- function(x){
   x[is.na(x)] <- median(na.omit(x))
   return(x)
 }
+for(stockColumn in names(stockfish)){
+  stockfish[[stockColumn]] <- replaceWithMedian(stockfish[[stockColumn]])
+}
 stockfish$gameDrift <- replaceWithMedian(stockfish$gameDrift)
 stockfish$gameOscillation <- replaceWithMedian(stockfish$gameOscillation)
 stockfish$whiteGoodShare <- replaceWithMedian(stockfish$whiteGoodShare)
@@ -80,6 +83,8 @@ for(foldI in 1:nFolds){
   
   featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
                           'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
+                          'SamplePoint1', 'SamplePoint2', 'SamplePoint3', 'SamplePoint4', 'SamplePoint5',
+                          'SamplePoint6', 'SamplePoint7', 'SamplePoint8', 'SamplePoint9', 'SamplePoint10',
                           'OutOfBook', 'Result')
   rf1 <- randomForest(trainDf[featureColumnNames], trainDf[['AverageBC']])
   testDf$PredictedAvg <- 2500 * sqrt(predict(rf1, newdata=testDf))

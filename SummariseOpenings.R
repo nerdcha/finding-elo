@@ -67,7 +67,7 @@ for(gameI in 1:length(data)){
 }
 
 
-
+write(outOfBookMoves, file='Features/OutOfBookMove.txt', ncolumns=1, sep='\n')
 
 
 
