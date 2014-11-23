@@ -70,15 +70,17 @@ featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
                         'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
                         'SamplePoint1', 'SamplePoint2', 'SamplePoint3', 'SamplePoint4', 'SamplePoint5',
                         'SamplePoint6', 'SamplePoint7', 'SamplePoint8', 'SamplePoint9', 'SamplePoint10',
+                        'SamplePoint11', 'SamplePoint12', 'SamplePoint13', 'SamplePoint14', 'SamplePoint15',
+                        'SamplePoint16', 'SamplePoint17', 'SamplePoint18', 'SamplePoint19', 'SamplePoint20',
                         'OutOfBook', 'Result')
 xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
                                                 paste(featureColumnNames, collapse="+"))), xTestBig)
 
 
-trainSize <- 15000
+trainSize <- 20000
 testSize <- 5000
 
-nFolds <- 10
+nFolds <- 15
 predictionsWhite <- matrix(NA, nrow=25000, ncol=nFolds)
 predictionsBlack <- matrix(NA, nrow=25000, ncol=nFolds)
 MAEs <- c()
@@ -101,14 +103,14 @@ for(foldI in 1:nFolds){
   # xgb.cv() doesn't seem to support dynamic access to its findings in the current version,
   # it just prints them...
   gb1 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
-                 nrounds = 400, eta=0.05, max.depth=2)
+                 nrounds = 300, eta=0.07, max.depth=3)
   testDf$PredictedAvg <- 2500 * sqrt(predict(gb1, newdata=dTest))
   bigPredictedAvg <- 2500 * sqrt(predict(gb1, newdata=xTestBigMatrix))
   
   dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['WhiteMinusBlack']])
   dTest <- xgb.DMatrix(testMatrix, label= testDf[['WhiteMinusBlack']])
   gb2 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
-                 nrounds = 400, eta=0.05, max.depth=2)
+                 nrounds = 300, eta=0.07, max.depth=3)
   testDf$PredictedDiff <- predict(gb2, newdata=dTest)
   bigPredictedDiff <- predict(gb2, newdata=xTestBigMatrix)
   

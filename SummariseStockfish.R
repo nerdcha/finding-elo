@@ -3,7 +3,7 @@ library(dplyr)
 
 stocktxt <-  tbl_df(read.csv('stockfish.csv'))
 
-nSamplePoints <- 10
+nSamplePoints <- 20
 emptySamplePoints <- data.frame(matrix(rep(NA, nSamplePoints), nrow=1))
 for(i in 1:nSamplePoints){
   names(emptySamplePoints)[i] <- paste0('SamplePoint',i)
