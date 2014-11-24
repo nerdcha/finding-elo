@@ -24,7 +24,8 @@ getSummaryStats <- function(stockline){
   if(gameLength < 3){
     return(cbind(data.frame(gameLength = gameLength, gameDrift = 0, gameOscillation = 0,
                       whiteGoodShare = NA, blackGoodShare = NA,
-                      whiteBlunders = NA, blackBlunders = NA, whiteGoodMoves=NA, blackGoodMoves=NA),
+                      whiteBlunders = NA, blackBlunders = NA, whiteGoodMoves=NA, blackGoodMoves=NA,
+                      whiteDeltaMean = NA, gameMedian = NA, minScore=NA, maxScore=NA),
                  emptySamplePoints, emptyMovesToKeep))
   }
   diffGame <- diff(game)
@@ -36,11 +37,14 @@ getSummaryStats <- function(stockline){
   blackBlunders <- sum(diffGame[blackDiffs] > 100)
   whiteGoodMoves <- sum(diffGame[whiteDiffs] > 100)
   blackGoodMoves <- sum(diffGame[blackDiffs] < -100)
+  whiteDeltaMean <- mean(diffGame[whiteDiffs])   # Thanks to Jeff Moser :)
   
   gameDrift <- median(diffGame)
   gameOscillation <- median(abs(diffGame))
+  gameMedian <- median(game)
+  minScore <- min(game)
+  maxScore <- max(game)
   
-
   whiteMoves <- seq(from=1, by=2, to=gameLength)
   blackMoves <- seq(from=2, by=2, to=gameLength)
   
@@ -55,7 +59,9 @@ getSummaryStats <- function(stockline){
   return(cbind(data.frame(gameLength = gameLength, gameDrift = gameDrift, gameOscillation = gameOscillation,
                     whiteGoodShare = whiteGoodShare, blackGoodShare = blackGoodShare,
                     whiteBlunders = whiteBlunders, blackBlunders = blackBlunders,
-                    whiteGoodMoves = whiteGoodMoves, blackGoodMoves = blackGoodMoves),
+                    whiteGoodMoves = whiteGoodMoves, blackGoodMoves = blackGoodMoves,
+                    whiteDeltaMean = whiteDeltaMean, gameMedian = gameMedian,
+                    minScore=minScore, maxScore=maxScore),
                theseSamplePoints, theseMovesToKeep))
 }
 
