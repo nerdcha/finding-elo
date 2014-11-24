@@ -5,6 +5,7 @@ set.seed(31337)
 # install_github('tqchen/xgboost/R-package')
 # Using version 0.3, accessed 23 Nov 2014
 library(xgboost)
+library(caret)
 
 blackElo <- read.table('Features/BlackElo.txt', header=FALSE)$V1
 blackMoveOne <- read.table('Features/BlackMoveOne.txt', header=FALSE)$V1
@@ -84,16 +85,31 @@ predictionsBlack <- matrix(NA, nrow=25000, ncol=nFolds)
 MAEs <- c()
 
 for(foldI in 1:nFolds){
-  print(sprintf('Training fold %d...', foldI))
+
   
+  print(sprintf('Training fold %d...', foldI))
   trainRows <- sample.int(n=25000, size=trainSize, replace=TRUE)
   testRows <- sample((1:25000)[-trainRows], size=testSize, replace=FALSE)
   trainDf <- cbind(xTrainBig[trainRows,],
                    yTrainBig[trainRows,])
   testDf <- cbind(xTrainBig[testRows,], yTrainBig[testRows,])
   
+  print('Preparing training matrices...')
+  
   trainMatrix <- model.matrix(as.formula(paste('~ 0 +', paste(featureColumnNames, collapse="+"))), trainDf)
   testMatrix <- model.matrix(as.formula(paste('~ 0 +', paste(featureColumnNames, collapse="+"))), testDf)
+  
+  
+  print('Removing correlated features...')
+  
+  theseFeatureColumnNames <- featureColumnNames
+  featureCorrelations <- cor(trainMatrix)
+  highlyCorrelatedCols <- findCorrelation(featureCorrelations, cutoff = 0.75)
+  print(colnames(trainMatrix)[highlyCorrelatedCols])
+  trainMatrix <- trainMatrix[, -highlyCorrelatedCols]
+  testMatrix <- testMatrix[, -highlyCorrelatedCols]
+  xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
+                                                  paste(featureColumnNames[-highlyCorrelatedCols], collapse="+"))), xTestBig)
   
   dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['AverageBC']])
   dTest <- xgb.DMatrix(testMatrix, label= testDf[['AverageBC']])
@@ -112,7 +128,7 @@ for(foldI in 1:nFolds){
   
   testDf$PredictedDiff <- predict(gb2, newdata=dTest)
   bigPredictedDiff <- predict(gb2, newdata=xTestBigMatrix)
-  
+
   testDf$PredictedWhite <- testDf$PredictedAvg + 0.5*testDf$PredictedDiff
   testDf$PredictedBlack <- testDf$PredictedAvg - 0.5*testDf$PredictedDiff
   
