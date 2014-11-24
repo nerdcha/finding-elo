@@ -24,7 +24,7 @@ getSummaryStats <- function(stockline){
   if(gameLength < 3){
     return(cbind(data.frame(gameLength = gameLength, gameDrift = 0, gameOscillation = 0,
                       whiteGoodShare = NA, blackGoodShare = NA,
-                      whiteBlunders = NA, blackBlunders = NA),
+                      whiteBlunders = NA, blackBlunders = NA, whiteGoodMoves=NA, blackGoodMoves=NA),
                  emptySamplePoints, emptyMovesToKeep))
   }
   diffGame <- diff(game)
@@ -34,6 +34,9 @@ getSummaryStats <- function(stockline){
   blackGoodShare <- sum(diffGame[blackDiffs] < 0) / (gameLength/2)
   whiteBlunders <- sum(diffGame[whiteDiffs] < -100)
   blackBlunders <- sum(diffGame[blackDiffs] > 100)
+  whiteGoodMoves <- sum(diffGame[whiteDiffs] > 100)
+  blackGoodMoves <- sum(diffGame[blackDiffs] < -100)
+  
   gameDrift <- median(diffGame)
   gameOscillation <- median(abs(diffGame))
   
@@ -51,7 +54,8 @@ getSummaryStats <- function(stockline){
   
   return(cbind(data.frame(gameLength = gameLength, gameDrift = gameDrift, gameOscillation = gameOscillation,
                     whiteGoodShare = whiteGoodShare, blackGoodShare = blackGoodShare,
-                    whiteBlunders = whiteBlunders, blackBlunders = blackBlunders),
+                    whiteBlunders = whiteBlunders, blackBlunders = blackBlunders,
+                    whiteGoodMoves = whiteGoodMoves, blackGoodMoves = blackGoodMoves),
                theseSamplePoints, theseMovesToKeep))
 }
 

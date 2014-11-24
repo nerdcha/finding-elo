@@ -14,7 +14,12 @@ grep '^1\.' data.pgn | cut -f6 -d' ' > Features/BlackMoveTwo.txt
 export LC_CTYPE=C
 export LANG=C
 cat gm2006.pgn | sed -n 'H;${;x;s/\n //;p;}' | awk 'NR % 4 == 0' | sort > Features/SortedGmOpenings.txt
-cut -d " " -f 1-75 Features/SortedGmOpenings.txt > Features/TrimmedGmOpenings.txt
+#cat gm1981.pgn | sed -n 'H;${;x;s/\n //;p;}' | awk 'NR % 4 == 0' | sort > Features/SortedGmOpenings2.tx
+# TextWrangler -- Remove Line Endings on gm1981.pgn
+# then:
+cat gm1981.pgn | awk 'NR % 4 == 3' > Features/SortedGmOpenings2.txt
+cat Features/SortedGmOpenings.txt Features/SortedGmOpenings2.txt | sort > Features/BigSortedOpenings.txt
+cut -d " " -f 1-75 Features/BigSortedOpenings.txt > Features/TrimmedGmOpenings.txt
 
 
 # That unfolding doesn't seem to work on data.pgn.
