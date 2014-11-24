@@ -94,34 +94,31 @@ for(foldI in 1:nFolds){
   trainMatrix <- model.matrix(as.formula(paste('~ 0 +', paste(featureColumnNames, collapse="+"))), trainDf)
   testMatrix <- model.matrix(as.formula(paste('~ 0 +', paste(featureColumnNames, collapse="+"))), testDf)
   
-  dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['AverageBC']])
-  dTest <- xgb.DMatrix(testMatrix, label= testDf[['AverageBC']])
+  dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['WhiteElo']])
+  dTest <- xgb.DMatrix(testMatrix, label= testDf[['WhiteElo']])
   # nrounds chosen by running xgb.cv(list(objective='reg:linear'), dTrain, nfold=5, nrounds= xxx)
   # xgb.cv() doesn't seem to support dynamic access to its findings in the current version,
   # it just prints them...
   gb1 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
                  nrounds = 300, eta=0.07, max.depth=3)
-  testDf$PredictedAvg <- 2500 * sqrt(predict(gb1, newdata=dTest))
-  bigPredictedAvg <- 2500 * sqrt(predict(gb1, newdata=xTestBigMatrix))
+  testDf$PredictedWhite <- predict(gb1, newdata=dTest)
+  bigPredictedWhite <- predict(gb1, newdata=xTestBigMatrix)
   
-  dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['WhiteMinusBlack']])
-  dTest <- xgb.DMatrix(testMatrix, label= testDf[['WhiteMinusBlack']])
+  dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['BlackElo']])
+  dTest <- xgb.DMatrix(testMatrix, label= testDf[['BlackElo']])
   gb2 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
                  nrounds = 300, eta=0.07, max.depth=3)
   
-  testDf$PredictedDiff <- predict(gb2, newdata=dTest)
-  bigPredictedDiff <- predict(gb2, newdata=xTestBigMatrix)
-  
-  testDf$PredictedWhite <- testDf$PredictedAvg + 0.5*testDf$PredictedDiff
-  testDf$PredictedBlack <- testDf$PredictedAvg - 0.5*testDf$PredictedDiff
+  testDf$PredictedBlack <- predict(gb2, newdata=dTest)
+  bigPredictedBlack <- predict(gb2, newdata=xTestBigMatrix)
   
   thisMAE <- mean(c(abs(testDf$PredictedWhite - testDf$WhiteElo),
                     abs(testDf$PredictedBlack - testDf$BlackElo)))
   MAEs <- c(MAEs,thisMAE)
   print(thisMAE)
   
-  predictionsWhite[,foldI] <- bigPredictedAvg + 0.5*bigPredictedDiff
-  predictionsBlack[,foldI] <- bigPredictedAvg - 0.5*bigPredictedDiff
+  predictionsWhite[,foldI] <- bigPredictedWhite
+  predictionsBlack[,foldI] <- bigPredictedBlack
 }
 
 print(mean(MAEs))
