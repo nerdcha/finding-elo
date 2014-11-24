@@ -48,8 +48,19 @@ getSummaryStats <- function(stockline){
   whiteMoves <- seq(from=1, by=2, to=gameLength)
   blackMoves <- seq(from=2, by=2, to=gameLength)
   
-  sampleMoves <- c(whiteMoves[floor(seq(from=1, to=length(whiteMoves), length.out = nSamplePoints/2))],
-                   blackMoves[floor(seq(from=1, to=length(blackMoves), length.out = nSamplePoints/2))])
+  whiteSampleMoves <- seq(from=1, to=length(whiteMoves), length.out = nSamplePoints/2)
+  whiteShare <- whiteSampleMoves - floor(whiteSampleMoves)  
+  blackShare <- 1 - whiteShare
+  sampledWhiteMoves <- whiteShare * whiteMoves[floor(whiteSampleMoves)] + blackShare * blackMoves[floor(whiteSampleMoves)]
+
+  blackSampleMoves <- seq(from=1, to=length(blackMoves), length.out = nSamplePoints/2)
+  blackShare <- blackSampleMoves - floor(blackSampleMoves)  
+  whiteShare <- 1 - blackShare
+  whiteSampleIndices <- min(length(whiteMoves), floor(blackSampleMoves) + 1)
+  sampledBlackMoves <- whiteShare * whiteMoves[whiteSampleIndices] + blackShare * blackMoves[floor(blackSampleMoves)]
+  
+  sampleMoves <- c(sampledWhiteMoves, sampledBlackMoves)
+  
   theseSamplePoints <- emptySamplePoints
   theseSamplePoints[1,] <- game[sampleMoves]
   
