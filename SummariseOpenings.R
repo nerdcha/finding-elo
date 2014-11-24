@@ -1,7 +1,7 @@
 
 library(dplyr)
 
-openings <- tbl_df(read.table('Features/TrimmedGmOpenings.txt', header=FALSE, sep=' '))
+openings <- tbl_df(read.table('Features/TrimmedGmOpenings.txt', header=FALSE, sep=' ', fill=TRUE))
 
 stopifnot(ncol(openings) %% 3 == 0)
 maxOpeningDepth <- ncol(openings)/3

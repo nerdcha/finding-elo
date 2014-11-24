@@ -19,7 +19,7 @@ cat gm2006.pgn | sed -n 'H;${;x;s/\n //;p;}' | awk 'NR % 4 == 0' | sort > Featur
 # then:
 cat gm1981.pgn | awk 'NR % 4 == 3' > Features/SortedGmOpenings2.txt
 cat Features/SortedGmOpenings.txt Features/SortedGmOpenings2.txt | sort > Features/BigSortedOpenings.txt
-cut -d " " -f 1-75 Features/BigSortedOpenings.txt > Features/TrimmedGmOpenings.txt
+cut -d " " -f 1-90 Features/BigSortedOpenings.txt > Features/TrimmedGmOpenings.txt
 
 
 # That unfolding doesn't seem to work on data.pgn.
