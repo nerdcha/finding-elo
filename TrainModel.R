@@ -5,6 +5,7 @@ set.seed(31337)
 # install_github('tqchen/xgboost/R-package')
 # Using version 0.3, accessed 23 Nov 2014
 library(xgboost)
+library(randomForest)
 
 blackElo <- read.table('Features/BlackElo.txt', header=FALSE)$V1
 blackMoveOne <- read.table('Features/BlackMoveOne.txt', header=FALSE)$V1
@@ -75,10 +76,10 @@ xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
                                                 paste(featureColumnNames, collapse="+"))), xTestBig)
 
 
-trainSize <- 20000
+trainSize <- 5000
 testSize <- 5000
 
-nFolds <- 15
+nFolds <- 20
 predictionsWhite <- matrix(NA, nrow=25000, ncol=nFolds)
 predictionsBlack <- matrix(NA, nrow=25000, ncol=nFolds)
 MAEs <- c()
@@ -101,17 +102,20 @@ for(foldI in 1:nFolds){
   # xgb.cv() doesn't seem to support dynamic access to its findings in the current version,
   # it just prints them...
   gb1 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
-                 nrounds = 300, eta=0.07, max.depth=3)
-  testDf$PredictedAvg <- 2500 * sqrt(predict(gb1, newdata=dTest))
-  bigPredictedAvg <- 2500 * sqrt(predict(gb1, newdata=xTestBigMatrix))
+                 nrounds = 150, eta=0.1, max.depth=4)
+  rf1 <- randomForest(trainDf[featureColumnNames], trainDf[['AverageBC']])
+  
+  testDf$PredictedAvg <- 2500 * sqrt(0.8*predict(gb1, newdata=dTest) + 0.2*predict(rf1, newdata=testDf))
+  bigPredictedAvg <- 2500 * sqrt(0.8*predict(gb1, newdata=xTestBigMatrix) + 0.2*predict(rf1, newdata=xTestBig))
   
   dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['WhiteMinusBlack']])
   dTest <- xgb.DMatrix(testMatrix, label= testDf[['WhiteMinusBlack']])
   gb2 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
-                 nrounds = 300, eta=0.07, max.depth=3)
+                 nrounds = 300, eta=0.1, max.depth=4)
+  rf2 <- randomForest(trainDf[featureColumnNames], trainDf[['WhiteMinusBlack']])
   
-  testDf$PredictedDiff <- predict(gb2, newdata=dTest)
-  bigPredictedDiff <- predict(gb2, newdata=xTestBigMatrix)
+  testDf$PredictedDiff <- 0.8*predict(gb2, newdata=dTest) + 0.2*predict(rf2, newdata=testDf)
+  bigPredictedDiff <- 0.8*predict(gb2, newdata=xTestBigMatrix) + 0.2*predict(rf2, newdata=xTestBig)
   
   testDf$PredictedWhite <- testDf$PredictedAvg + 0.5*testDf$PredictedDiff
   testDf$PredictedBlack <- testDf$PredictedAvg - 0.5*testDf$PredictedDiff
