@@ -48,38 +48,12 @@ openingMoves <- paste(whiteMoveOneGrouped, blackMoveOneGrouped,
                       whiteMoveTwoGrouped, blackMoveTwoGrouped)
 openingMovesGrouped <- groupMoves(openingMoves, 50)
 
-
-movesToKeep <- c(1:40)
-nMovesToKeep <- length(movesToKeep)
-diffsToKeep <- c(1:40)
-nDiffsToKeep <- length(diffsToKeep)
-moveNames <- c()
-for(i in 1:nMovesToKeep){
-  moveNames <- c(moveNames, paste0('Move',i))
-}
-diffNames <- c()
-for(i in 1:nDiffsToKeep){
-  diffNames <- c(moveNames, paste0('Diff',i))
-}
-
-firstForty <- stockfish[moveNames]
-ScoreOnOutOfBook <- rep(NA, 50000)
-WhiteOutOfBook <- outOfBook %% 2
-for(i in 1:50000){
-  ScoreOnOutOfBook[i] <- firstForty[i,outOfBook[i]]
-}
-
-
 xTrainBig <- cbind(
   data.frame(OutOfBook = outOfBook[1:25000],
-             ScoreOnOutOfBook = ScoreOnOutOfBook[1:25000],
-             WhiteOutOfBook = WhiteOutOfBook[1:25000],
              Result = factor(result[1:25000])),
   stockfish[1:25000,])
 xTestBig <- cbind(
   data.frame(OutOfBook = outOfBook[25001:50000],
-             ScoreOnOutOfBook = ScoreOnOutOfBook[25001:50000],
-             WhiteOutOfBook = WhiteOutOfBook[25001:50000],
              Result = factor(result[25001:50000])),
   stockfish[25001:50000,])
 yTrainBig <- data.frame(WhiteElo = whiteElo, BlackElo = blackElo,
@@ -88,11 +62,17 @@ yTrainBig <- data.frame(WhiteElo = whiteElo, BlackElo = blackElo,
 yTrainBig$AverageBC <- (yTrainBig$AverageElo/2500)**2
 
 
+movesToKeep <- c(1:40)
+nMovesToKeep <- length(movesToKeep)
+moveNames <- c()
+for(i in 1:nMovesToKeep){
+  moveNames <- c(moveNames, paste0('Move',i))
+}
 
-
-featureColumnNames <- c('gameLength', 'whiteBlunders', 'blackBlunders',
+featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
+                        'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
                         'SamplePoint18', 'SamplePoint19', 'SamplePoint20',
-                        moveNames, diffNames,
+                        moveNames,
                         'OutOfBook', 'Result')
 xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
                                                 paste(featureColumnNames, collapse="+"))), xTestBig)
