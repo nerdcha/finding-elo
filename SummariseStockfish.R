@@ -15,6 +15,14 @@ emptyMovesToKeep <- data.frame(matrix(rep(NA, nMovesToKeep), nrow=1))
 for(i in 1:nMovesToKeep){
   names(emptyMovesToKeep)[i] <- paste0('Move',i)
 }
+diffsToKeep <- c(1:40)
+nDiffsToKeep <- length(diffsToKeep)
+emptyDiffsToKeep <- data.frame(matrix(rep(NA, nDiffsToKeep), nrow=1))
+for(i in 1:nDiffsToKeep){
+  names(emptyDiffsToKeep)[i] <- paste0('Diff',i)
+}
+
+
 
 getSummaryStats <- function(stockline){
   
@@ -26,7 +34,7 @@ getSummaryStats <- function(stockline){
                       whiteGoodShare = NA, blackGoodShare = NA,
                       whiteBlunders = NA, blackBlunders = NA, whiteGoodMoves=NA, blackGoodMoves=NA,
                       whiteDeltaMean = NA, gameMedian = NA, minScore=NA, maxScore=NA),
-                 emptySamplePoints, emptyMovesToKeep))
+                 emptySamplePoints, emptyMovesToKeep, emptyDiffsToKeep))
   }
   diffGame <- diff(game)
   blackDiffs <- seq(from=1, by=2, to=length(diffGame))
@@ -56,13 +64,16 @@ getSummaryStats <- function(stockline){
   theseMovesToKeep <- emptyMovesToKeep
   theseMovesToKeep[1,] <- game[movesToKeep]
   
+  theseDiffsToKeep <- emptyDiffsToKeep
+  theseDiffsToKeep[1,] <- diffGame[diffsToKeep]
+  
   return(cbind(data.frame(gameLength = gameLength, gameDrift = gameDrift, gameOscillation = gameOscillation,
                     whiteGoodShare = whiteGoodShare, blackGoodShare = blackGoodShare,
                     whiteBlunders = whiteBlunders, blackBlunders = blackBlunders,
                     whiteGoodMoves = whiteGoodMoves, blackGoodMoves = blackGoodMoves,
                     whiteDeltaMean = whiteDeltaMean, gameMedian = gameMedian,
                     minScore=minScore, maxScore=maxScore),
-               theseSamplePoints, theseMovesToKeep))
+               theseSamplePoints, theseMovesToKeep, theseDiffsToKeep))
 }
 
 mySummary <- stocktxt %>% rowwise() %>% do(getSummaryStats(.)) %>% ungroup()

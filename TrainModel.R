@@ -51,9 +51,15 @@ openingMovesGrouped <- groupMoves(openingMoves, 50)
 
 movesToKeep <- c(1:40)
 nMovesToKeep <- length(movesToKeep)
+diffsToKeep <- c(1:40)
+nDiffsToKeep <- length(diffsToKeep)
 moveNames <- c()
 for(i in 1:nMovesToKeep){
   moveNames <- c(moveNames, paste0('Move',i))
+}
+diffNames <- c()
+for(i in 1:nDiffsToKeep){
+  diffNames <- c(moveNames, paste0('Diff',i))
 }
 
 firstForty <- stockfish[moveNames]
@@ -84,10 +90,9 @@ yTrainBig$AverageBC <- (yTrainBig$AverageElo/2500)**2
 
 
 
-featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
-                        'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
+featureColumnNames <- c('gameLength', 'whiteBlunders', 'blackBlunders',
                         'SamplePoint18', 'SamplePoint19', 'SamplePoint20',
-                        moveNames, 'ScoreOnOutOfBook', 'WhiteOutOfBook',
+                        moveNames, diffNames,
                         'OutOfBook', 'Result')
 xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
                                                 paste(featureColumnNames, collapse="+"))), xTestBig)
