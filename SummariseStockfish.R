@@ -9,7 +9,7 @@ for(i in 1:nSamplePoints){
   names(emptySamplePoints)[i] <- paste0('SamplePoint',i)
 }
 
-movesToKeep <- c(8,15,22,29,36)
+movesToKeep <- c(1:40)
 nMovesToKeep <- length(movesToKeep)
 emptyMovesToKeep <- data.frame(matrix(rep(NA, nMovesToKeep), nrow=1))
 for(i in 1:nMovesToKeep){

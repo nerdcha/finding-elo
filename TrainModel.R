@@ -61,15 +61,18 @@ yTrainBig <- data.frame(WhiteElo = whiteElo, BlackElo = blackElo,
                         WhiteMinusBlack = whiteElo - blackElo)
 yTrainBig$AverageBC <- (yTrainBig$AverageElo/2500)**2
 
+
+movesToKeep <- c(1:40)
+nMovesToKeep <- length(movesToKeep)
+moveNames <- c()
+for(i in 1:nMovesToKeep){
+  moveNames <- c(moveNames, paste0('Move',i))
+}
+
 featureColumnNames <- c('gameLength', 'gameDrift', 'gameOscillation',
                         'whiteGoodShare', 'blackGoodShare', 'whiteBlunders', 'blackBlunders',
-                        'whiteGoodMoves', 'blackGoodMoves', 'whiteDeltaMean', 'gameMedian',
-                        'minScore','maxScore',
-                        'SamplePoint1', 'SamplePoint2', 'SamplePoint3', 'SamplePoint4', 'SamplePoint5',
-                        'SamplePoint6', 'SamplePoint7', 'SamplePoint8', 'SamplePoint9', 'SamplePoint10',
-                        'SamplePoint11', 'SamplePoint12', 'SamplePoint13', 'SamplePoint14', 'SamplePoint15',
-                        'SamplePoint16', 'SamplePoint17', 'SamplePoint18', 'SamplePoint19', 'SamplePoint20',
-                        'Move1', 'Move2', 'Move3', 'Move4', 'Move5',
+                        'SamplePoint18', 'SamplePoint19', 'SamplePoint20',
+                        moveNames,
                         'OutOfBook', 'Result')
 xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
                                                 paste(featureColumnNames, collapse="+"))), xTestBig)
