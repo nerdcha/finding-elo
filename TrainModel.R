@@ -4,7 +4,7 @@ set.seed(31337)
 # library(devtools)
 # install_github('tqchen/xgboost/R-package')
 # Using version 0.3, accessed 23 Nov 2014
-library(extraTrees)
+library(xgboost)
 
 blackElo <- read.table('Features/BlackElo.txt', header=FALSE)$V1
 blackMoveOne <- read.table('Features/BlackMoveOne.txt', header=FALSE)$V1
@@ -78,10 +78,10 @@ xTestBigMatrix <- model.matrix(as.formula(paste('~ 0 +',
                                                 paste(featureColumnNames, collapse="+"))), xTestBig)
 
 
-trainSize <- 1000
+trainSize <- 20000
 testSize <- 5000
 
-nFolds <- 20
+nFolds <- 15
 predictionsWhite <- matrix(NA, nrow=25000, ncol=nFolds)
 predictionsBlack <- matrix(NA, nrow=25000, ncol=nFolds)
 MAEs <- c()
@@ -98,14 +98,23 @@ for(foldI in 1:nFolds){
   trainMatrix <- model.matrix(as.formula(paste('~ 0 +', paste(featureColumnNames, collapse="+"))), trainDf)
   testMatrix <- model.matrix(as.formula(paste('~ 0 +', paste(featureColumnNames, collapse="+"))), testDf)
   
-  et1 <- extraTrees(trainMatrix, trainDf[['AverageBC']], nodesize=10, ntree=500, numRandomCuts=3)
-  testDf$PredictedAvg <- 2500 * sqrt(predict(et1, newdata=testMatrix))
-  bigPredictedAvg <- 2500 * sqrt(predict(et1, newdata=xTestBigMatrix))
+  dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['AverageBC']])
+  dTest <- xgb.DMatrix(testMatrix, label= testDf[['AverageBC']])
+  # nrounds chosen by running xgb.cv(list(objective='reg:linear'), dTrain, nfold=5, nrounds= xxx)
+  # xgb.cv() doesn't seem to support dynamic access to its findings in the current version,
+  # it just prints them...
+  gb1 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
+                 nrounds = 300, eta=0.07, max.depth=3)
+  testDf$PredictedAvg <- 2500 * sqrt(predict(gb1, newdata=dTest))
+  bigPredictedAvg <- 2500 * sqrt(predict(gb1, newdata=xTestBigMatrix))
   
-  et2 <- extraTrees(trainMatrix, trainDf[['WhiteMinusBlack']], nodesize=10, ntree=500, numRandomCuts=3)
+  dTrain <- xgb.DMatrix(trainMatrix, label= trainDf[['WhiteMinusBlack']])
+  dTest <- xgb.DMatrix(testMatrix, label= testDf[['WhiteMinusBlack']])
+  gb2 <- xgboost(data = dTrain, objective='reg:linear', verbose=0,
+                 nrounds = 300, eta=0.07, max.depth=3)
   
-  testDf$PredictedDiff <- predict(et2, newdata=testMatrix)
-  bigPredictedDiff <- predict(et2, newdata=xTestBigMatrix)
+  testDf$PredictedDiff <- predict(gb2, newdata=dTest)
+  bigPredictedDiff <- predict(gb2, newdata=xTestBigMatrix)
   
   testDf$PredictedWhite <- testDf$PredictedAvg + 0.5*testDf$PredictedDiff
   testDf$PredictedBlack <- testDf$PredictedAvg - 0.5*testDf$PredictedDiff
