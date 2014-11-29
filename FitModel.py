@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 from sklearn import cross_validation
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.cross_validation import KFold
 from sklearn.preprocessing import Imputer
+from sklearn.grid_search import GridSearchCV
 
 
 blackElo = pd.read_csv('Features/BlackElo.txt', names=['blackElo'])
@@ -49,13 +49,21 @@ def UnprojectElo(x, y):
 
 
 class MyModel:
-	def __init__(self, random_state1=0, random_state2=0):
-		self.gbmAvg_ = GradientBoostingRegressor(verbose=0, loss='lad', random_state=random_state1)
-		self.gbmDiff_ = GradientBoostingRegressor(verbose=0, loss='lad', random_state=random_state2)
+	def __init__(self):
+		pass
 	def fit(self, X, white, black):
 		avg, diff = ProjectElo(white, black)
+		param_grid = {'max_leaf_nodes': [3,6],
+						'n_estimators': [200,400,600],
+						'learning_rate': [0.05,0.1]}
+		self.gbmAvg_ = GridSearchCV(GradientBoostingRegressor(loss='lad'), param_grid,
+								scoring = 'mean_absolute_error', verbose=1, n_jobs=6)
+		self.gbmDiff_ = GridSearchCV(GradientBoostingRegressor(loss='lad'), param_grid,
+								scoring = 'mean_absolute_error', verbose=1, n_jobs=6)
 		self.gbmAvg_ = self.gbmAvg_.fit(X, avg)
 		self.gbmDiff_ = self.gbmDiff_.fit(X, diff)
+		print(self.gbmAvg_.best_params_)
+		print(self.gbmDiff_.best_params_)
 	def predict(self, Xnew):
 		avgP = self.gbmAvg_.predict(Xnew)
 		diffP = self.gbmDiff_.predict(Xnew)
@@ -63,7 +71,7 @@ class MyModel:
 
 
 nFolds = 10
-kf = KFold(n=25000, n_folds=nFolds, shuffle=True, random_state=0)
+kf = cross_validation.KFold(n=25000, n_folds=nFolds, shuffle=True, random_state=0)
 
 testErrors = []
 
