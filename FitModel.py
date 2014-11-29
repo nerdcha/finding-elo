@@ -53,17 +53,12 @@ class MyModel:
 		pass
 	def fit(self, X, white, black):
 		avg, diff = ProjectElo(white, black)
-		param_grid = {'max_leaf_nodes': [3,6],
-						'n_estimators': [200,400,600],
-						'learning_rate': [0.05,0.1]}
-		self.gbmAvg_ = GridSearchCV(GradientBoostingRegressor(loss='lad'), param_grid,
-								scoring = 'mean_absolute_error', verbose=1, n_jobs=6)
-		self.gbmDiff_ = GridSearchCV(GradientBoostingRegressor(loss='lad'), param_grid,
-								scoring = 'mean_absolute_error', verbose=1, n_jobs=6)
+		self.gbmAvg_ = GradientBoostingRegressor(loss='lad', max_leaf_nodes=7,
+								n_estimators=500,learning_rate = 0.1)
+		self.gbmDiff_ = GradientBoostingRegressor(loss='lad', max_leaf_nodes=6,
+								n_estimators=300,learning_rate = 0.05)
 		self.gbmAvg_ = self.gbmAvg_.fit(X, avg)
 		self.gbmDiff_ = self.gbmDiff_.fit(X, diff)
-		print(self.gbmAvg_.best_params_)
-		print(self.gbmDiff_.best_params_)
 	def predict(self, Xnew):
 		avgP = self.gbmAvg_.predict(Xnew)
 		diffP = self.gbmDiff_.predict(Xnew)
