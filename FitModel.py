@@ -6,6 +6,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.preprocessing import Imputer
 from sklearn.grid_search import GridSearchCV
 
+np.random.seed(31337)
 
 blackElo = pd.read_csv('Features/BlackElo.txt', names=['blackElo'])
 whiteElo = pd.read_csv('Features/WhiteElo.txt', names=['whiteElo'])
