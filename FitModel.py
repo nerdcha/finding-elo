@@ -22,7 +22,6 @@ stockfishFeatureNames = (['gameLength', 'gameDrift', 'gameOscillation', 'whiteGo
 bigX = stockfish[stockfishFeatureNames]
 bigX['OutOfBook'] = outOfBook
 
-
 bigX['Result'] = result['Result'].replace({'1-0': 1, '1/2-1/2': 0, '0-1': -1})
 
 for colName in movesToKeep + samplesToKeep:
@@ -37,9 +36,30 @@ fillWithMedian = Imputer(strategy='median', copy=False)
 bigXfilled = fillWithMedian.fit_transform(bigX)
 
 
-AverageElo = 0.5*blackElo['blackElo'] + 0.5*whiteElo['whiteElo']
-AverageEloBC = (AverageElo/2500)**2
-EloDiff = whiteElo['whiteElo'] - blackElo['blackElo']
+def ProjectElo(white, black):
+	x = ((black+white)/5000)**2
+	y = white - black
+	return x, y
+
+def UnprojectElo(x, y):
+	blackPlusWhite = 5000 * np.sqrt(x)
+	white = 0.5*(blackPlusWhite + y)
+	black = 0.5*(blackPlusWhite - y)
+	return white, black
+
+
+class MyModel:
+	def __init__(self, random_state1=0, random_state2=0):
+		self.gbmAvg_ = GradientBoostingRegressor(verbose=0, loss='lad', random_state=random_state1)
+		self.gbmDiff_ = GradientBoostingRegressor(verbose=0, loss='lad', random_state=random_state2)
+	def fit(self, X, white, black):
+		avg, diff = ProjectElo(white, black)
+		self.gbmAvg_ = self.gbmAvg_.fit(X, avg)
+		self.gbmDiff_ = self.gbmDiff_.fit(X, diff)
+	def predict(self, Xnew):
+		avgP = self.gbmAvg_.predict(Xnew)
+		diffP = self.gbmDiff_.predict(Xnew)
+		return UnprojectElo(avgP, diffP)
 
 
 nFolds = 10
@@ -51,36 +71,26 @@ for train_index, test_index in kf:
 	print('Fitting a fold.')
 	trainX = bigXfilled[train_index,]
 	testX = bigXfilled[test_index,]
-	trainAvgBC = AverageEloBC.ix[train_index]
-	testAvgBC = AverageEloBC.ix[test_index]
-	trainDiff = EloDiff.ix[train_index]
-	testDiff = EloDiff.ix[test_index]
-	gbmAvg = GradientBoostingRegressor(verbose=0)
-	gbmAvg = gbmAvg.fit(trainX, trainAvgBC)
-	testPredictionAvg = 2500 * np.sqrt(gbmAvg.predict(testX))
-	gbmDiff = GradientBoostingRegressor(verbose=0)
-	gbmDiff = gbmDiff.fit(trainX, trainDiff)
-	testPredictionDiff = gbmDiff.predict(testX)
-	testPredictedWhite = testPredictionAvg + 0.5*testPredictionDiff
-	testPredictedBlack = testPredictionAvg - 0.5*testPredictionDiff
+	trainWhite = whiteElo['whiteElo'].ix[train_index]
+	trainBlack = blackElo['blackElo'].ix[train_index]
 	testActualWhite = whiteElo['whiteElo'].ix[test_index]
 	testActualBlack = blackElo['blackElo'].ix[test_index]
+	model = MyModel()
+	model.fit(trainX, trainWhite, trainBlack)
+	testPredictedWhite, testPredictedBlack = model.predict(testX)
 	testErrors.append(float(np.mean(np.abs(np.concatenate(
 				[testActualWhite - testPredictedWhite,
 				 testActualBlack - testPredictedBlack])))))
 
 print(np.mean(testErrors))
 
-gbmAvg = GradientBoostingRegressor(verbose=0)
-gbmAvg = gbmAvg.fit(bigXfilled[:25000], AverageEloBC)
-testPredictionAvg = 2500 * np.sqrt(gbmAvg.predict(bigXfilled[25000:]))
-gbmDiff = GradientBoostingRegressor(verbose=0)
-gbmDiff = gbmDiff.fit(bigXfilled[:25000], EloDiff)
-testPredictionDiff = gbmDiff.predict(bigXfilled[25000:])
+bigModel = MyModel()
+bigModel.fit(bigXfilled[:25000], whiteElo['whiteElo'].iloc[:25000], blackElo['blackElo'].iloc[:25000])
+predictedWhite, predictedBlack = bigModel.predict(bigXfilled[25000:])
 
 prediction = pd.DataFrame({'Event': [i for i in range(25001,50001)],
-							'WhiteElo': np.round(testPredictionAvg + 0.5*testPredictionDiff,1),
-							'BlackElo': np.round(testPredictionAvg - 0.5*testPredictionDiff,1)} )
+							'WhiteElo': np.round(predictedWhite,1),
+							'BlackElo': np.round(predictedBlack,1)} )
 prediction.to_csv('predictions.csv', columns=['Event','WhiteElo','BlackElo'], index=False)
 
 
