@@ -3,12 +3,8 @@ import pandas as pd
 import numpy as np
 from sklearn import cross_validation
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.ensemble import BaggingRegressor
 from sklearn.preprocessing import Imputer
 from sklearn.grid_search import GridSearchCV
-
-
-np.random.seed(31337)
 
 
 blackElo = pd.read_csv('Features/BlackElo.txt', names=['blackElo'])
@@ -57,14 +53,10 @@ class MyModel:
 		pass
 	def fit(self, X, white, black):
 		avg, diff = ProjectElo(white, black)
-		self.gbmAvg_ = BaggingRegressor(
-						base_estimator=GradientBoostingRegressor(loss='lad', max_leaf_nodes=7,
-										n_estimators=500,learning_rate = 0.1),
-						n_jobs = 6  )
-		self.gbmDiff_ = BaggingRegressor(
-						base_estimator=GradientBoostingRegressor(loss='lad', max_leaf_nodes=6,
-										n_estimators=300,learning_rate = 0.05),
-						n_jobs = 6 )
+		self.gbmAvg_ = GradientBoostingRegressor(loss='lad', max_leaf_nodes=7,
+								n_estimators=500,learning_rate = 0.1)
+		self.gbmDiff_ = GradientBoostingRegressor(loss='lad', max_leaf_nodes=6,
+								n_estimators=300,learning_rate = 0.05)
 		self.gbmAvg_ = self.gbmAvg_.fit(X, avg)
 		self.gbmDiff_ = self.gbmDiff_.fit(X, diff)
 	def predict(self, Xnew):
