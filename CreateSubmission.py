@@ -47,8 +47,8 @@ xprimex = (white_guesses - mean_white).dot( (white_guesses - mean_white).transpo
 hacky_inverse_weights_unnormalised = train_sample_size * 1/(cv_scores-190) + test_sample_size * 1/(lb_scores-190)
 inverse_weights = hacky_inverse_weights_unnormalised/np.sum(hacky_inverse_weights_unnormalised)
 
-predictedWhite = inverse_weights.dot(white_guesses)
-predictedBlack = inverse_weights.dot(black_guesses)
+predictedWhite = np.array([np.median(x) for x in white_guesses.transpose()])
+predictedBlack = np.array([np.median(x) for x in black_guesses.transpose()])
 prediction = pd.DataFrame({'Event': [i for i in range(25001,50001)],
                             'WhiteElo': np.round(predictedWhite,1),
                             'BlackElo': np.round(predictedBlack,1)} )
