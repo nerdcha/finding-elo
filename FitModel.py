@@ -15,9 +15,11 @@ outOfBook = pd.read_csv('Features/OutOfBookMove.txt', names=['OutOfBook'])
 result = pd.read_csv('Features/Results.txt', names=['Result'])
 
 movesToKeep = ['Move'+str(x) for x in range(1,81)]
-samplesToKeep = ['SamplePoint'+str(x) for x in [18,19,20]]
+samplesToKeep = ['SamplePoint'+str(x) for x in range(1,21)]
 stockfishFeatureNames = (['gameLength', 'gameDrift', 'gameOscillation', 'whiteGoodShare',
-				'blackGoodShare', 'whiteBlunders', 'blackBlunders']
+				'blackGoodShare', 'whiteBlunders', 'blackBlunders',
+				'whiteGoodMoves', 'blackGoodMoves',
+                'whiteDeltaMean', 'gameMedian', 'minScore', 'maxScore']
 				+ movesToKeep + samplesToKeep)
 
 bigX = stockfish[stockfishFeatureNames]
