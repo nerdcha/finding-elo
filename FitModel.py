@@ -4,7 +4,7 @@ import numpy as np
 from sklearn import cross_validation
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.preprocessing import Imputer
-from sklearn.grid_search import GridSearchCV
+from sklearn.grid_search import RandomizedSearchCV
 
 np.random.seed(31337)
 
@@ -52,14 +52,22 @@ def UnprojectElo(x, y):
 
 
 class MyModel:
-	def __init__(self):
-		pass
+	def __init__(self, param_iter = 10):
+		self.random_state = np.random.RandomState(seed=31337)
+		self.param_iter = param_iter
+	
 	def fit(self, X, white, black):
 		avg, diff = ProjectElo(white, black)
-		self.gbmAvg_ = GradientBoostingRegressor(loss='lad', max_leaf_nodes=7,
-								n_estimators=500,learning_rate = 0.1)
-		self.gbmDiff_ = GradientBoostingRegressor(loss='lad', max_leaf_nodes=6,
-								n_estimators=300,learning_rate = 0.05)
+		
+		gbm_params = {'max_leaf_nodes': [8,10,12,14],
+					'n_estimators': [400,800,1200],
+					'learning_rate': [0.02] }
+		self.gbmAvg_ = RandomizedSearchCV(GradientBoostingRegressor(loss='lad'), gbm_params,
+								scoring = 'mean_absolute_error', verbose=1, n_jobs=6,
+								random_state = self.random_state, n_iter = self.param_iter)
+		self.gbmDiff_ = RandomizedSearchCV(GradientBoostingRegressor(loss='lad'), gbm_params,
+								scoring = 'mean_absolute_error', verbose=1, n_jobs=6,
+								random_state = self.random_state, n_iter = self.param_iter)
 		self.gbmAvg_ = self.gbmAvg_.fit(X, avg)
 		self.gbmDiff_ = self.gbmDiff_.fit(X, diff)
 	def predict(self, Xnew):
@@ -68,7 +76,7 @@ class MyModel:
 		return UnprojectElo(avgP, diffP)
 
 
-nFolds = 10
+nFolds = 4
 kf = cross_validation.KFold(n=25000, n_folds=nFolds, shuffle=True, random_state=0)
 
 testErrors = []
@@ -83,6 +91,10 @@ for train_index, test_index in kf:
 	testActualBlack = blackElo['blackElo'].ix[test_index]
 	model = MyModel()
 	model.fit(trainX, trainWhite, trainBlack)
+	print('gbmAvg params:')
+	print(model.gbmAvg_.best_params_)
+	print('gbmDiff params:')
+	print(model.gbmDiff_.best_params_)
 	testPredictedWhite, testPredictedBlack = model.predict(testX)
 	testErrors.append(float(np.mean(np.abs(np.concatenate(
 				[testActualWhite - testPredictedWhite,
