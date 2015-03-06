@@ -2,9 +2,8 @@
 import pandas as pd
 import numpy as np
 from sklearn import cross_validation
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.preprocessing import Imputer
-from sklearn.grid_search import RandomizedSearchCV
 
 np.random.seed(31337)
 
@@ -59,15 +58,10 @@ class MyModel:
 	def fit(self, X, white, black):
 		avg, diff = ProjectElo(white, black)
 		
-		gbm_params = {'max_leaf_nodes': [8,10,12,14],
-					'n_estimators': [400,800,1200],
-					'learning_rate': [0.02] }
-		self.gbmAvg_ = RandomizedSearchCV(GradientBoostingRegressor(loss='lad'), gbm_params,
-								scoring = 'mean_absolute_error', verbose=1, n_jobs=6,
-								random_state = self.random_state, n_iter = self.param_iter)
-		self.gbmDiff_ = RandomizedSearchCV(GradientBoostingRegressor(loss='lad'), gbm_params,
-								scoring = 'mean_absolute_error', verbose=1, n_jobs=6,
-								random_state = self.random_state, n_iter = self.param_iter)
+		self.gbmAvg_ = ExtraTreesRegressor(n_estimators=500, verbose=1,
+								random_state = self.random_state, n_jobs=6)
+		self.gbmDiff_ = ExtraTreesRegressor(n_estimators=500, verbose=1,
+								random_state = self.random_state, n_jobs=6)
 		self.gbmAvg_ = self.gbmAvg_.fit(X, avg)
 		self.gbmDiff_ = self.gbmDiff_.fit(X, diff)
 	def predict(self, Xnew):
@@ -91,10 +85,6 @@ for train_index, test_index in kf:
 	testActualBlack = blackElo['blackElo'].ix[test_index]
 	model = MyModel()
 	model.fit(trainX, trainWhite, trainBlack)
-	print('gbmAvg params:')
-	print(model.gbmAvg_.best_params_)
-	print('gbmDiff params:')
-	print(model.gbmDiff_.best_params_)
 	testPredictedWhite, testPredictedBlack = model.predict(testX)
 	testErrors.append(float(np.mean(np.abs(np.concatenate(
 				[testActualWhite - testPredictedWhite,
