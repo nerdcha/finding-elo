@@ -2,9 +2,10 @@
 import pandas as pd
 import numpy as np
 from sklearn import cross_validation
-from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.preprocessing import Imputer
-
+import sys
+sys.path.append('/Users/jamie/xgboost/wrapper')
+import xgboost as xgb
 np.random.seed(31337)
 
 blackElo = pd.read_csv('Features/BlackElo.txt', names=['blackElo'])
@@ -13,12 +14,10 @@ stockfish = pd.read_csv('Features/StockSummary.csv')
 outOfBook = pd.read_csv('Features/OutOfBookMove.txt', names=['OutOfBook'])
 result = pd.read_csv('Features/Results.txt', names=['Result'])
 
-movesToKeep = ['Move'+str(x) for x in range(1,81)]
-samplesToKeep = ['SamplePoint'+str(x) for x in range(1,21)]
+movesToKeep = ['Move'+str(x) for x in range(1,81,3)]
+samplesToKeep = ['SamplePoint'+str(x) for x in [18,19,20]]
 stockfishFeatureNames = (['gameLength', 'gameDrift', 'gameOscillation', 'whiteGoodShare',
-				'blackGoodShare', 'whiteBlunders', 'blackBlunders',
-				'whiteGoodMoves', 'blackGoodMoves',
-                'whiteDeltaMean', 'gameMedian', 'minScore', 'maxScore']
+				'blackGoodShare', 'whiteBlunders', 'blackBlunders']
 				+ movesToKeep + samplesToKeep)
 
 bigX = stockfish[stockfishFeatureNames]
@@ -58,19 +57,21 @@ class MyModel:
 	def fit(self, X, white, black):
 		avg, diff = ProjectElo(white, black)
 		
-		self.gbmAvg_ = ExtraTreesRegressor(n_estimators=500, verbose=1,
-								random_state = self.random_state, n_jobs=6)
-		self.gbmDiff_ = ExtraTreesRegressor(n_estimators=500, verbose=1,
-								random_state = self.random_state, n_jobs=6)
-		self.gbmAvg_ = self.gbmAvg_.fit(X, avg)
-		self.gbmDiff_ = self.gbmDiff_.fit(X, diff)
+		dtrain_avg = xgb.DMatrix(X, label=avg)
+		dtrain_diff = xgb.DMatrix(X, label=diff)
+		xgb_params = {'max_depth':3, 'eta':0.05, 'silent':1}
+		n_rounds = 400
+		self.gbmAvg_ = xgb.train(xgb_params, dtrain_avg, n_rounds)
+		self.gbmDiff_ = xgb.train(xgb_params, dtrain_diff, n_rounds)
+	
 	def predict(self, Xnew):
-		avgP = self.gbmAvg_.predict(Xnew)
-		diffP = self.gbmDiff_.predict(Xnew)
+		dtest = xgb.DMatrix(Xnew)
+		avgP = self.gbmAvg_.predict(dtest)
+		diffP = self.gbmDiff_.predict(dtest)
 		return UnprojectElo(avgP, diffP)
 
 
-nFolds = 4
+nFolds = 10
 kf = cross_validation.KFold(n=25000, n_folds=nFolds, shuffle=True, random_state=0)
 
 testErrors = []
@@ -90,11 +91,12 @@ for train_index, test_index in kf:
 				[testActualWhite - testPredictedWhite,
 				 testActualBlack - testPredictedBlack])))))
 
-print(np.mean(testErrors))
 
 bigModel = MyModel()
 bigModel.fit(bigXfilled[:25000], whiteElo['whiteElo'].iloc[:25000], blackElo['blackElo'].iloc[:25000])
 predictedWhite, predictedBlack = bigModel.predict(bigXfilled[25000:])
+
+print(np.mean(testErrors))
 
 prediction = pd.DataFrame({'Event': [i for i in range(25001,50001)],
 							'WhiteElo': np.round(predictedWhite,1),
