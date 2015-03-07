@@ -59,8 +59,8 @@ class MyModel:
 		
 		dtrain_avg = xgb.DMatrix(X, label=avg)
 		dtrain_diff = xgb.DMatrix(X, label=diff)
-		xgb_params = {'max_depth':3, 'eta':0.05, 'silent':1}
-		n_rounds = 400
+		xgb_params = {'max_depth':2, 'eta':0.05, 'silent':1}
+		n_rounds = 600
 		self.gbmAvg_ = xgb.train(xgb_params, dtrain_avg, n_rounds)
 		self.gbmDiff_ = xgb.train(xgb_params, dtrain_diff, n_rounds)
 	
