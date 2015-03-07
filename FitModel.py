@@ -14,8 +14,8 @@ stockfish = pd.read_csv('Features/StockSummary.csv')
 outOfBook = pd.read_csv('Features/OutOfBookMove.txt', names=['OutOfBook'])
 result = pd.read_csv('Features/Results.txt', names=['Result'])
 
-movesToKeep = ['Move'+str(x) for x in range(1,81,3)]
-samplesToKeep = ['SamplePoint'+str(x) for x in [18,19,20]]
+movesToKeep = ['Move'+str(x) for x in range(1,81)]
+samplesToKeep = ['SamplePoint'+str(x) for x in range(1,21)]
 stockfishFeatureNames = (['gameLength', 'gameDrift', 'gameOscillation', 'whiteGoodShare',
 				'blackGoodShare', 'whiteBlunders', 'blackBlunders']
 				+ movesToKeep + samplesToKeep)
@@ -59,8 +59,8 @@ class MyModel:
 		
 		dtrain_avg = xgb.DMatrix(X, label=avg)
 		dtrain_diff = xgb.DMatrix(X, label=diff)
-		xgb_params = {'max_depth':8, 'eta':0.05, 'silent':1}
-		n_rounds = 300
+		xgb_params = {'max_depth': 7, 'eta':0.05, 'silent':1}
+		n_rounds = 250
 		self.gbmAvg_ = xgb.train(xgb_params, dtrain_avg, n_rounds)
 		self.gbmDiff_ = xgb.train(xgb_params, dtrain_diff, n_rounds)
 	
